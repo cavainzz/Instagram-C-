@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InstaClone JS</title>
+    <style>
+        /* CSS: Estilizando para parecer um App Mobile */
+        body {
+            background-color: #fafafa;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            margin: 0;
+            padding: 20px 0;
+        }
+
+        /* Container que simula a tela do celular */
+        .app-container {
+            width: 100%;
+            max-width: 400px;
+            background-color: white;
+            border: 1px solid #dbdbdb;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Cabeçalho */
+        header {
+            background-color: white;
+            border-bottom: 1px solid #dbdbdb;
+            padding: 10px 0;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        header h1 {
+            font-family: 'Cursive', sans-serif; /* Simula a fonte do logo */
+            margin: 0;
+            font-size: 24px;
+        }
+
+        /* Área de Posts */
+        .feed {
+            padding-bottom: 60px; /* Espaço para o botão flutuante */
+        }
+
+        .post {
+            border-bottom: 1px solid #efefef;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+
+        .post-header {
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .avatar {
+            width: 30px;
+            height: 30px;
+            background-color: #ddd;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .post-image {
+            width: 100%;
+            height: auto;
+            display: block;
+            background-color: #f0f0f0;
+            min-height: 300px; /* Altura mínima se a img quebrar */
+            object-fit: cover;
+        }
+
+        .post-actions {
+            padding: 10px;
+            font-size: 24px;
+        }
+
+        .like-btn {
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: inline-block;
+        }
+        
+        .like-btn:active {
+            transform: scale(1.3);
+        }
+
+        .liked {
+            color: #ed4956; /* Vermelho do Instagram */
+        }
+
+        .post-info {
+            padding: 0 10px;
+            font-size: 14px;
+        }
+
+        .likes-count {
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .caption span {
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        /* Botão Flutuante de Adicionar Post */
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            right: 50%;
+            transform: translateX(50%); /* Centraliza na tela mobile */
+            width: 50px;
+            height: 50px;
+            background-color: #0095f6;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 30px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            cursor: pointer;
+            z-index: 20;
+        }
+
+        /* Modal (Janela de Postagem) */
+        .modal {
+            display: none; /* Escondido por padrão */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 30;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        input {
+            padding: 10px;
+            border: 1px solid #dbdbdb;
+            border-radius: 5px;
+        }
+
+        button.post-btn {
+            background-color: #0095f6;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header>
+            <h1>InstaClone</h1>
+        </header>
+
+        <div id="feed" class="feed">
+            </div>
+
+        <div class="fab" onclick="abrirModal()">+</div>
+    </div>
+
+    <div id="modalPost" class="modal" onclick="fecharModal(event)">
+        <div class="modal-content">
+            <h3>Novo Post</h3>
+            <input type="text" id="imgUrl" placeholder="Cole a URL da imagem aqui...">
+            <input type="text" id="legenda" placeholder="Escreva uma legenda...">
+            <button class="post-btn" onclick="criarPost()">Compartilhar</button>
+        </div>
+    </div>
+
+    <script>
+        // --- JAVASCRIPT ---
+
+        // 1. O "Banco de Dados" (Array de Objetos)
+        // Começamos com alguns posts de exemplo
+        let posts = [
+            {
+                id: 1,
+                usuario: "dev_junior",
+                imagem: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=500", // Imagem de código
+                likes: 42,
+                curtido: false,
+                legenda: "Dia de codar! 💻 #frontend"
+            },
+            {
+                id: 2,
+                usuario: "travel_br",
+                imagem: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=500", // Imagem de paisagem
+                likes: 120,
+                curtido: false,
+                legenda: "Que vista incrível! 🏔️"
+            }
+        ];
+
+        // 2. Função para Desenhar (Renderizar) o Feed
+        function renderizarFeed() {
+            const feedContainer = document.getElementById('feed');
+            feedContainer.innerHTML = ""; // Limpa o feed atual
+
+            posts.forEach(post => {
+                // Define se o coração está vermelho ou preto
+                const corCoracao = post.curtido ? 'liked' : '';
+                const iconeCoracao = post.curtido ? '❤️' : '🤍';
+
+                // Cria o HTML de um post
+                const htmlPost = `
+                    <div class="post">
+                        <div class="post-header">
+                            <div class="avatar"></div>
+                            <span>${post.usuario}</span>
+                        </div>
+                        <img src="${post.imagem}" class="post-image" ondblclick="toggleLike(${post.id})">
+                        <div class="post-actions">
+                            <span class="like-btn ${corCoracao}" onclick="toggleLike(${post.id})">
+                                ${iconeCoracao}
+                            </span>
+                            <span>💬</span>
+                            <span>✈️</span>
+                        </div>
+                        <div class="post-info">
+                            <span class="likes-count">${post.likes} curtidas</span>
+                            <div class="caption">
+                                <span>${post.usuario}</span> ${post.legenda}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Adiciona ao container
+                feedContainer.innerHTML += htmlPost;
+            });
+        }
+
+        // 3. Função de Curtir (Toggle Like)
+        function toggleLike(id) {
+            // Procura o post no array pelo ID
+            const post = posts.find(p => p.id === id);
+            
+            if (post) {
+                // Inverte o status (se true vira false, se false vira true)
+                post.curtido = !post.curtido;
+                
+                // Atualiza o número
+                if (post.curtido) {
+                    post.likes++;
+                } else {
+                    post.likes--;
+                }
+                
+                // Redesenha a tela para mostrar a mudança
+                renderizarFeed();
+            }
+        }
+
+        // 4. Funções do Modal e Criar Post
+        function abrirModal() {
+            document.getElementById('modalPost').style.display = 'flex';
+        }
+
+        function fecharModal(event) {
+            // Fecha se clicar fora do quadrado branco
+            if (event.target.id === 'modalPost') {
+                document.getElementById('modalPost').style.display = 'none';
+            }
+        }
+
+        function criarPost() {
+            const inputUrl = document.getElementById('imgUrl').value;
+            const inputLegenda = document.getElementById('legenda').value;
+
+            // Validação simples
+            if (inputUrl === "") {
+                alert("Por favor, coloque uma URL de imagem!");
+                return;
+            }
+
+            // Cria o novo objeto post
+            const novoPost = {
+                id: Date.now(), // Gera um ID único baseado no tempo
+                usuario: "eu_mesmo",
+                imagem: inputUrl,
+                likes: 0,
+                curtido: false,
+                legenda: inputLegenda
+            };
+
+            // Adiciona no COMEÇO do array (unshift) para aparecer em cima
+            posts.unshift(novoPost);
+
+            // Limpa os inputs e fecha modal
+            document.getElementById('imgUrl').value = "";
+            document.getElementById('legenda').value = "";
+            document.getElementById('modalPost').style.display = 'none';
+
+            // Atualiza a tela
+            renderizarFeed();
+        }
+
+        // Inicia o app desenhando a primeira vez
+        renderizarFeed();
+
+    </script>
+</body>
+</html>
